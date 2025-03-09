@@ -1,71 +1,158 @@
-class Task:
-    def __init__(self, name, description):
-        self.name = name
-        self.description = description
-        self.completed = False
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 0;
+      font-family: sans-serif;
+      overflow-x: hidden;
+      background: url('img.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input,
+    button,
+    .tasks span {
+      outline: none;
+      border: none;
+      padding: 14px 30px;
+      font-size: 16px;
+      border-radius: 3px;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    button {
+      background: rgb(194, 21, 122);
+      color: #fff;
+      cursor: pointer;
+      border: 2px solid rgb(30, 101, 129);
+    }
+    input,
+    .tasks span {
+      border: 2px solid #ccc;
+      background: #fff;
+    }
+    .tasks {
+      list-style: none;
+      margin-top: 10px;
+    }
+    .tasks li {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s;
+      padding: 10px;
+      border-radius: 5px;
+      background: #fff;
+      border: 2px solid #ddd;
+    }
+    .tasks span {
+      display: inline-block;
+      min-width: 260px;
+    }
+    .tasks li.delete {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    .tasks li.delete ~ li {
+      transform: translateY(calc(-100% - 10px));
+    }
+    .tasks li.completed span {
+      text-decoration: line-through;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Task Manager</h1>
+    <form onsubmit="addTask(event)">
+      <input required name="task" type="text" placeholder="Enter task detail">
+      <button type="submit">Add</button>
+    </form>
+    <ul class="tasks"></ul>
+  </div>
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
-class TaskManager:
-    def __init__(self):
-        self.tasks = []
+    const addTask = (event) => {
+      event.preventDefault();
+      tasks.push({ text: event.target.task.value, completed: false });
+      event.target.task.value = "";
+      updateList();
+    };
 
-    def add_task(self, task):
-        self.tasks.append(task)
+    const deleteTask = (index) => {
+      const consent = confirm('Are you sure you want to delete?');
+      if (!consent) return;
+      document.querySelectorAll('.tasks li')[index].classList.add('delete');
+      setTimeout(() => {
+        tasks.splice(index, 1);
+        updateList();
+      }, 600);
+    };
 
-    def view_tasks(self):
-        if not self.tasks:
-            print("No tasks found.")
-        else:
-            for index, task in enumerate(self.tasks):
-                status = "Completed" if task.completed else "Pending"
-                print(f"{index + 1}. {task.name} - {task.description} - {status}")
+    const editTask = (index) => {
+      const newTask = prompt('Edit your task:', tasks[index].text);
+      if (newTask !== null && newTask !== '') {
+        tasks[index].text = newTask;
+        updateList();
+      }
+    };
 
-    def mark_task_as_completed(self, index):
-        if 0 < index <= len(self.tasks):
-            self.tasks[index - 1].completed = True
-            print("Task marked as completed.")
-        else:
-            print("Invalid task index.")
+    const toggleCompleteTask = (index) => {
+      tasks[index].completed = !tasks[index].completed;
+      updateList();
+    };
 
-    def delete_task(self, index):
-        if 0 < index <= len(self.tasks):
-            del self.tasks[index - 1]
-            print("Task deleted.")
-        else:
-            print("Invalid task index.")
+    const updateList = () => {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      const tasksList = document.querySelector(".tasks");
+      tasksList.innerHTML = "";
+      tasks.forEach((task, index) => {
+        const taskItem = document.createElement('li');
+        if (task.completed) {
+          taskItem.classList.add('completed');
+        }
+        const taskSpan = document.createElement('span');
+        taskSpan.textContent = task.text;
+        const completeButton = document.createElement('button');
+        completeButton.textContent = 'Complete';
+        completeButton.onclick = () => toggleCompleteTask(index);
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        editButton.onclick = () => editTask(index);
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = () => deleteTask(index);
+        taskItem.append(taskSpan, completeButton, editButton, deleteButton);
+        tasksList.append(taskItem);
+      });
+    };
 
-def main():
-    task_manager = TaskManager()
-
-    while True:
-        print("\nTask Manager Menu:")
-        print("1. Add Task")
-        print("2. View Tasks")
-        print("3. Mark Task as Completed")
-        print("4. Delete Task")
-        print("5. Exit")
-
-        choice = input("Enter your choice: ")
-
-        if choice == '1':
-            name = input("Enter task name: ")
-            description = input("Enter task description: ")
-            task = Task(name, description)
-            task_manager.add_task(task)
-            print("Task added successfully.")
-        elif choice == '2':
-            print("\nTasks:")
-            task_manager.view_tasks()
-        elif choice == '3':
-            index = int(input("Enter task index to mark as completed: "))
-            task_manager.mark_task_as_completed(index)
-        elif choice == '4':
-            index = int(input("Enter task index to delete: "))
-            task_manager.delete_task(index)
-        elif choice == '5':
-            print("Exiting Task Manager.")
-            break
-        else:
-            print("Invalid choice. Please try again.")
-
-if __name__ == "__main__":
-    main()
+    updateList();
+  </script>
+</body>
+</html>
